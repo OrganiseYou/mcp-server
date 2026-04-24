@@ -1,0 +1,36 @@
+{
+    "name": "organiseyou/mcp-server",
+    "description": "Drop-in MCP (Model Context Protocol) server for Laravel applications",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "OrganiseYou\\McpServer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "OrganiseYou\\McpServer\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "OrganiseYou\\McpServer\\McpServiceProvider"
+            ],
+            "aliases": {
+                "Mcp": "OrganiseYou\\McpServer\\Facades\\Mcp"
+            }
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
