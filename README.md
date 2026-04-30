@@ -348,8 +348,15 @@ Batch requests are also supported — send an array of JSON-RPC objects and rece
 ## Testing
 
 ```bash
-composer install
+docker run --rm -v $(pwd):/app -w /app composer install
 ./vendor/bin/phpunit
+```
+
+Or with Docker (no local PHP required):
+
+```bash
+docker run --rm -v $(pwd):/app -w /app php:8.4-cli php vendor/bin/phpunit
+docker run --rm -v $(pwd):/app -w /app php:8.3-cli php vendor/bin/phpunit
 ```
 
 ## License
