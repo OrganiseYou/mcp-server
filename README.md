@@ -148,6 +148,103 @@ class GetOrderTool implements McpTool
 
 Tools are resolved from the Laravel container, so constructor dependencies are injected automatically.
 
+## Logging
+
+Logging is **off by default**. Enable it in `.env`:
+
+```env
+MCP_LOGGING_ENABLED=true
+MCP_LOG_CHANNEL=stack   # optional — defaults to your app's default channel
+MCP_LOG_LEVEL=debug     # optional — defaults to debug
+```
+
+Or publish the config (`php artisan vendor:publish --tag=mcp-config`) and set:
+
+```php
+'logging' => [
+    'enabled' => env('MCP_LOGGING_ENABLED', false),
+    'channel' => env('MCP_LOG_CHANNEL', null),
+    'level'   => env('MCP_LOG_LEVEL', 'debug'),
+],
+```
+
+When enabled, the following is logged automatically:
+
+| Event | Message | Context keys |
+|---|---|---|
+| Request received | `MCP request` | `method`, `id` |
+| Request completed | `MCP response` | `method`, `id`, `duration_ms` |
+| Tool invoked | `MCP tool call` | `tool`, `input` |
+| Tool returned | `MCP tool result` | `tool`, `duration_ms` |
+| Any error | `MCP error` | `code`, `message`, `id` |
+
+Errors always log at `warning` level regardless of `MCP_LOG_LEVEL`.
+
+### Logging inside tools
+
+**Class-based tools** — inject `McpLogger` and call `logActivity()`:
+
+```php
+use OrganiseYou\McpServer\Logging\McpLogger;
+
+class GetOrderTool implements McpTool
+{
+    public function __construct(
+        private OrderRepository $orders,
+        private McpLogger $logger,
+    ) {}
+
+    public function __invoke(array $input): mixed
+    {
+        $this->logger->logActivity('Fetching order', ['order_id' => $input['order_id']]);
+
+        return $this->orders->find($input['order_id']);
+    }
+}
+```
+
+`logActivity()` respects the same channel, level, and any extended context (e.g. tenant ID) as the rest of the logger.
+
+**Closure-based tools** — use Laravel's `Log` facade directly:
+
+```php
+use Illuminate\Support\Facades\Log;
+
+Mcp::tool('ping')
+    ->description('Health check')
+    ->inputSchema(['type' => 'object', 'properties' => []])
+    ->handle(function (array $input) {
+        Log::debug('ping tool called', $input);
+        return 'pong';
+    });
+```
+
+### Multi-tenant: adding tenant context to every log entry
+
+Extend `McpLogger`, override `context()`, and rebind the singleton:
+
+```php
+// app/Mcp/TenantMcpLogger.php
+namespace App\Mcp;
+
+use OrganiseYou\McpServer\Logging\McpLogger;
+
+class TenantMcpLogger extends McpLogger
+{
+    protected function context(): array
+    {
+        return ['tenant_id' => tenant()?->id];
+    }
+}
+```
+
+```php
+// AppServiceProvider::register()
+$this->app->singleton(\OrganiseYou\McpServer\Logging\McpLogger::class, \App\Mcp\TenantMcpLogger::class);
+```
+
+Every log entry — from the server, from tool calls, and from `logActivity()` inside your tools — will automatically include `tenant_id`. No changes required to individual tools.
+
 ## Transports
 
 ### HTTP (default)

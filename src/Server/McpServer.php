@@ -2,6 +2,7 @@
 
 namespace OrganiseYou\McpServer\Server;
 
+use OrganiseYou\McpServer\Logging\McpLogger;
 use OrganiseYou\McpServer\McpToolRegistry;
 use Throwable;
 
@@ -9,7 +10,10 @@ class McpServer
 {
     private const PROTOCOL_VERSION = '2024-11-05';
 
-    public function __construct(private McpToolRegistry $registry) {}
+    public function __construct(
+        private McpToolRegistry $registry,
+        private ?McpLogger $logger = null,
+    ) {}
 
     /**
      * Handle a raw JSON string and return a JSON string response.
@@ -17,11 +21,15 @@ class McpServer
      */
     public function handle(string $raw): ?string
     {
+        $start   = microtime(true);
         $request = json_decode($raw, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->logger?->logError(-32700, 'Parse error');
             return $this->error(null, -32700, 'Parse error');
         }
+
+        $method = $request['method'] ?? 'unknown';
 
         // Notification — no id, no response expected
         if (! array_key_exists('id', $request)) {
@@ -30,12 +38,15 @@ class McpServer
         }
 
         $id = $request['id'];
+        $this->logger?->logRequest($method, $id);
 
         try {
             $result = $this->dispatch($request);
+            $this->logger?->logResponse($method, $id, (microtime(true) - $start) * 1000);
             return $this->success($id, $result);
         } catch (Throwable $e) {
-            $code    = (is_int($e->getCode()) && $e->getCode() !== 0) ? $e->getCode() : -32603;
+            $code = (is_int($e->getCode()) && $e->getCode() !== 0) ? $e->getCode() : -32603;
+            $this->logger?->logError($code, $e->getMessage(), $id);
             return $this->error($id, $code, $e->getMessage());
         }
     }
@@ -84,7 +95,10 @@ class McpServer
             throw new \RuntimeException("Tool not found: {$name}", -32601);
         }
 
+        $toolStart = microtime(true);
+        $this->logger?->logToolCall($name, $input);
         $result = $this->registry->call($name, $input);
+        $this->logger?->logToolResult($name, (microtime(true) - $toolStart) * 1000);
 
         return [
             'content' => [

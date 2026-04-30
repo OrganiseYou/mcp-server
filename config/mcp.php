@@ -36,4 +36,21 @@ return [
         // App\Mcp\Tools\MyTool::class,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    | Off by default. Set MCP_LOGGING_ENABLED=true to start logging requests,
+    | tool calls, and errors through Laravel's Log facade.
+    |
+    | channel - null uses the application's default log channel
+    | level   - any PSR-3 level: debug, info, warning, error, …
+    | Errors are always logged at 'warning' regardless of 'level'.
+    */
+    'logging' => [
+        'enabled' => env('MCP_LOGGING_ENABLED', false),
+        'channel' => env('MCP_LOG_CHANNEL', null),
+        'level'   => env('MCP_LOG_LEVEL', 'debug'),
+    ],
+
 ];

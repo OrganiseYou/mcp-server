@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use OrganiseYou\McpServer\Commands\ServeCommand;
 use OrganiseYou\McpServer\Contracts\McpTool;
 use OrganiseYou\McpServer\Http\McpController;
+use OrganiseYou\McpServer\Logging\McpLogger;
 use OrganiseYou\McpServer\Server\McpServer;
 use OrganiseYou\McpServer\Transport\HttpTransport;
 use OrganiseYou\McpServer\Transport\StdioTransport;
@@ -17,6 +18,7 @@ class McpServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../config/mcp.php', 'mcp');
 
         $this->app->singleton(McpToolRegistry::class);
+        $this->app->singleton(McpLogger::class, fn () => new McpLogger());
         $this->app->singleton(McpServer::class);
         $this->app->singleton(StdioTransport::class);
         $this->app->singleton(HttpTransport::class);
