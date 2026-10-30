@@ -31,6 +31,12 @@ jobs:
           php-version: ${{ matrix.php }}
           coverage: none
 
+      # Laravel 11 is past security support, so every 11.x release carries an
+      # advisory and Composer refuses to install it. Allow it in CI only.
+      - name: Allow advisories for Laravel 11
+        if: matrix.laravel == '11.*'
+        run: composer config policy.advisories.block false
+
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
