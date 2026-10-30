@@ -17,11 +17,13 @@ class McpServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/mcp.php', 'mcp');
 
-        $this->app->singleton(McpToolRegistry::class);
+        // Scoped, so a long-lived worker (Octane, queue) starts every request
+        // with a fresh registry and a server/transports bound to it.
+        $this->app->scoped(McpToolRegistry::class, fn ($app) => $this->makeRegistry($app));
         $this->app->singleton(McpLogger::class, fn () => new McpLogger());
-        $this->app->singleton(McpServer::class);
-        $this->app->singleton(StdioTransport::class);
-        $this->app->singleton(HttpTransport::class);
+        $this->app->scoped(McpServer::class);
+        $this->app->scoped(StdioTransport::class);
+        $this->app->scoped(HttpTransport::class);
     }
 
     public function boot(): void
@@ -29,8 +31,6 @@ class McpServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/mcp.php' => config_path('mcp.php'),
         ], 'mcp-config');
-
-        $this->registerClassBasedTools();
 
         if (config('mcp.transport.http', true)) {
             $this->loadHttpRoutes();
@@ -41,12 +41,15 @@ class McpServiceProvider extends ServiceProvider
         }
     }
 
-    private function registerClassBasedTools(): void
+    /**
+     * Build a registry pre-filled with the class-based tools from config.
+     */
+    private function makeRegistry($app): McpToolRegistry
     {
-        $registry = $this->app->make(McpToolRegistry::class);
+        $registry = new McpToolRegistry();
 
-        foreach (config('mcp.tools', []) as $toolClass) {
-            $tool = $this->app->make($toolClass);
+        foreach ($app['config']->get('mcp.tools', []) as $toolClass) {
+            $tool = $app->make($toolClass);
 
             if (! $tool instanceof McpTool) {
                 throw new \InvalidArgumentException(
@@ -56,6 +59,8 @@ class McpServiceProvider extends ServiceProvider
 
             $registry->register($tool);
         }
+
+        return $registry;
     }
 
     private function loadHttpRoutes(): void

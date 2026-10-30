@@ -18,6 +18,11 @@ interface McpTool
     /**
      * Execute the tool with the given validated input.
      *
+     * Implementations may add an optional second parameter
+     * `?\OrganiseYou\McpServer\ToolContext $context = null` to receive the
+     * per-call context, and may define `annotations(): array` to declare
+     * readOnlyHint, destructiveHint, idempotentHint and openWorldHint.
+     *
      * @param  array<string, mixed>  $input
      */
     public function __invoke(array $input): mixed;

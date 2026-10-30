@@ -46,11 +46,17 @@ return [
     | channel - null uses the application's default log channel
     | level   - any PSR-3 level: debug, info, warning, error, …
     | Errors are always logged at 'warning' regardless of 'level'.
+    |
+    | redact  - null, a callable, or an invokable class name. It receives the
+    |           tool input and returns the copy that gets logged. Use a class
+    |           name if you run `php artisan config:cache` (closures can't be
+    |           cached).
     */
     'logging' => [
         'enabled' => env('MCP_LOGGING_ENABLED', false),
         'channel' => env('MCP_LOG_CHANNEL', null),
         'level'   => env('MCP_LOG_LEVEL', 'debug'),
+        'redact'  => null,
     ],
 
 ];
