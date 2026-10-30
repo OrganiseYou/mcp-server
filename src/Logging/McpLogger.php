@@ -21,12 +21,17 @@ class McpLogger
 
     public function logToolCall(string $tool, array $input): void
     {
-        $this->log('MCP tool call', ['tool' => $tool, 'input' => $input]);
+        $this->log('MCP tool call', ['tool' => $tool, 'input' => $this->redact($input)]);
     }
 
     public function logToolResult(string $tool, float $durationMs): void
     {
         $this->log('MCP tool result', ['tool' => $tool, 'duration_ms' => round($durationMs, 2)]);
+    }
+
+    public function logToolError(string $tool, string $reason, string $message): void
+    {
+        $this->log('MCP tool error', ['tool' => $tool, 'reason' => $reason, 'message' => $message]);
     }
 
     public function logError(int $code, string $message, mixed $id = null): void
@@ -47,6 +52,20 @@ class McpLogger
     protected function context(): array
     {
         return [];
+    }
+
+    /**
+     * Apply the configured mcp.logging.redact callback to tool input.
+     */
+    private function redact(array $input): array
+    {
+        $redactor = config('mcp.logging.redact');
+
+        if (is_string($redactor) && class_exists($redactor)) {
+            $redactor = app($redactor);
+        }
+
+        return is_callable($redactor) ? $redactor($input) : $input;
     }
 
     private function log(string $message, array $context = []): void

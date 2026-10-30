@@ -50,6 +50,14 @@ class ArrayLogger extends AbstractLogger
     }
 }
 
+class RedactToken
+{
+    public function __invoke(array $input): array
+    {
+        return array_merge($input, array_intersect_key(['token' => '[redacted]'], $input));
+    }
+}
+
 class McpLoggerTest extends TestCase
 {
     private ArrayLogger $driver;
@@ -125,6 +133,29 @@ class McpLoggerTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('my_tool', $record['context']['tool']);
         $this->assertSame(['param' => 'value'], $record['context']['input']);
+    }
+
+    public function test_redact_callback_removes_keys_from_logged_input(): void
+    {
+        config([
+            'mcp.logging.enabled' => true,
+            'mcp.logging.redact'  => fn (array $input) => array_diff_key($input, ['password' => true]),
+        ]);
+
+        $this->logger->logToolCall('login', ['user' => 'joris', 'password' => 'secret']);
+
+        $record = $this->driver->firstWithMessage('MCP tool call');
+        $this->assertSame(['user' => 'joris'], $record['context']['input']);
+        $this->assertStringNotContainsString('secret', json_encode($this->driver->records));
+    }
+
+    public function test_redact_accepts_invokable_class_name(): void
+    {
+        config(['mcp.logging.enabled' => true, 'mcp.logging.redact' => RedactToken::class]);
+
+        $this->logger->logToolCall('t', ['token' => 'abc', 'q' => 1]);
+
+        $this->assertSame(['token' => '[redacted]', 'q' => 1], $this->driver->firstWithMessage('MCP tool call')['context']['input']);
     }
 
     // -------------------------------------------------------------------------

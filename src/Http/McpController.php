@@ -8,10 +8,10 @@ use OrganiseYou\McpServer\Transport\HttpTransport;
 
 class McpController
 {
-    public function __construct(private HttpTransport $transport) {}
-
-    public function __invoke(Request $request): JsonResponse
+    // The transport is method-injected: the router caches controller
+    // instances, and a constructor-held transport would outlive its scope.
+    public function __invoke(Request $request, HttpTransport $transport): JsonResponse
     {
-        return $this->transport->handle($request);
+        return $transport->handle($request);
     }
 }
