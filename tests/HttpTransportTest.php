@@ -70,12 +70,24 @@ class HttpTransportTest extends TestCase
         $this->assertSame(-32700, $response->json('error.code'));
     }
 
-    public function test_notification_returns_204(): void
+    public function test_notification_returns_202_with_empty_body(): void
     {
-        // A notification has no id — server sends no response
-        $response = $this->postMcp(['jsonrpc' => '2.0', 'method' => 'ping', 'params' => []]);
+        // A notification has no id — the server answers 202 Accepted with no body
+        $response = $this->postMcp(['jsonrpc' => '2.0', 'method' => 'notifications/initialized']);
 
-        $response->assertNoContent();
+        $response->assertStatus(202);
+        $this->assertSame('', $response->getContent());
+    }
+
+    public function test_batch_of_only_notifications_returns_202_with_empty_body(): void
+    {
+        $response = $this->postMcp([
+            ['jsonrpc' => '2.0', 'method' => 'notifications/initialized'],
+            ['jsonrpc' => '2.0', 'method' => 'notifications/cancelled', 'params' => ['requestId' => 1]],
+        ]);
+
+        $response->assertStatus(202);
+        $this->assertSame('', $response->getContent());
     }
 
     // -------------------------------------------------------------------------

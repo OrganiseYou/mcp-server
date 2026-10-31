@@ -355,6 +355,24 @@ class McpServerTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function test_initialized_notification_returns_null_without_throwing(): void
+    {
+        $raw = json_encode(['jsonrpc' => '2.0', 'method' => 'notifications/initialized']);
+
+        $result = $this->server->handle($raw);
+
+        $this->assertNull($result);
+    }
+
+    public function test_unknown_notification_returns_null_without_throwing(): void
+    {
+        $raw = json_encode(['jsonrpc' => '2.0', 'method' => 'notifications/never-heard-of', 'params' => []]);
+
+        $result = $this->server->handle($raw);
+
+        $this->assertNull($result);
+    }
+
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------

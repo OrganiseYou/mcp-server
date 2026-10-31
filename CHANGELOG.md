@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows
 - `McpController` receives `HttpTransport` by method injection, because the router caches controller instances.
 - `initialize` without a `protocolVersion` now answers `2025-03-26` (was `2024-11-05`).
 
+### Fixed
+
+- Notifications (messages without an `id`, e.g. `notifications/initialized`) are no longer dispatched as requests and no longer throw `Method not found` (issue #3). `handle()` returns `null` for any notification, known or unknown, per JSON-RPC 2.0. The HTTP transport now answers `202 Accepted` with no body for a notification and for a batch made only of notifications (was `204` / a JSON `[]` body).
+
 ## [1.0.0]
 
 - Initial release.

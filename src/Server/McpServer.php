@@ -34,9 +34,9 @@ class McpServer
 
         $method = $request['method'] ?? 'unknown';
 
-        // Notification — no id, no response expected
+        // Notification — no response is sent, not even an error (JSON-RPC 2.0 §4.1).
+        // Unknown notification methods are ignored.
         if (! array_key_exists('id', $request)) {
-            $this->dispatch($request);
             return null;
         }
 

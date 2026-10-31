@@ -33,6 +33,9 @@ class HttpTransport
                     $responses[] = json_decode($response, true);
                 }
             }
+            if ($responses === []) {
+                return $this->accepted();
+            }
             return response()->json($responses);
         }
 
@@ -40,9 +43,18 @@ class HttpTransport
         $response = $this->server->handle($raw);
 
         if ($response === null) {
-            return response()->json(null, 204);
+            return $this->accepted();
         }
 
         return response()->json(json_decode($response, true));
+    }
+
+    /**
+     * Notifications are acknowledged with 202 Accepted and no body
+     * (MCP Streamable HTTP transport).
+     */
+    private function accepted(): JsonResponse
+    {
+        return new JsonResponse('', 202, [], 0, true);
     }
 }
